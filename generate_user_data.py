@@ -59,11 +59,17 @@ with open('categories.txt') as file:
             categories.append(d)
 
 def date_to_str(date):
-    return '%s %i, %i' % (MONTHS[date.month - 1], date.month, date.year)
+    return {
+        'date': date.month,
+        'month': MONTHS[date.month - 1],
+        'year': date.year
+    }
 
-def generate_user():
+def generate_user(FIRST_NAME, LAST_NAME, AUTHREC):
     DOB = date_to_str(datetime.fromtimestamp(randint(0, 10000000000)))
-    NAME = '%s, %s' % (choice(names).capitalize(), choice(names).capitalize())
+    #FIRST_NAME = choice(names).capitalize()
+    #LAST_NAME = choice(names).capitalize()
+    NAME = (FIRST_NAME + ' ' + LAST_NAME).lower()
     POSTALCODE = '%s%i%s %i%s%i' % (choice(alpha), randint(0, 9), choice(alpha), randint(0, 9),  choice(alpha), randint(0, 9))
 
     ADDRESS = '%i %s %s\n%s, %s\nCANADA %s' % (randint(1, 1000), choice(names).capitalize(), choice(ending), choice(city), choice(state), POSTALCODE)
@@ -75,14 +81,23 @@ def generate_user():
 
     return {
         'dob': DOB,
+        'first_name': FIRST_NAME,
+        'last_name': LAST_NAME,
         'name': NAME,
         'address': ADDRESS,
-        'transactions': transactions,
+        'transactions': [], #transactions,
         'accounts' : {
-            'Savings' : '$%0.2f' % (round(randint(0, 100000) / 100, 2)),
-            'Chequing Account' : '$%0.2f' % (round(randint(0, 100000) / 100, 2)),
-            'Visa' : '$%0.2f' % (round(randint(0, 100000) / 100, 2)),
-        }
+            'Savings' : round(randint(0, 100000) / 100, 2),
+            'Chequing Account' : round(randint(0, 100000) / 100, 2),
+            'Visa' : round(randint(0, 100000) / 100, 2),
+        },
+        'card' : {
+            'Visa': {
+                'number' : randint(1000000000000000, 10000000000000000),
+                'expiry_date' : date_to_str(datetime.fromtimestamp(randint(0, 10000000000)))
+            }
+        },
+        'authorized_recipients' : AUTHREC
     }
 
 def generate_transaction():
@@ -102,8 +117,12 @@ def generate_transaction():
 
 users = {}
 
-for _ in range(20):
-    users['%s %s %s %s' % (choice(words), choice(words), choice(words), choice(words))] = generate_user()
+users['correct horse battery staple'] = generate_user('Henry', 'Tu', ['car insect mean common'])
+users['car insect mean common'] = generate_user('Misha', 'Larionov', ['correct horse battery staple', 'i want your ass'])
+users['i want your ass'] = generate_user('Karl', 'Zhu', [])
+
+#for _ in range(20):
+#    users['%s %s %s %s' % (choice(words), choice(words), choice(words), choice(words))] = generate_user()
 
 import firebase_admin
 from firebase_admin import credentials
