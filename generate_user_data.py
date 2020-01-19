@@ -134,8 +134,8 @@ def generate_transaction():
 users = {}
 
 users['correct horse battery staple'] = generate_user('Henry', 'Tu', ['car insect mean common'], '1234')
-users['car insect mean common'] = generate_user('Misha', 'Larionov', ['correct horse battery staple', 'i want your ass'], '4321')
-users['i want your ass'] = generate_user('Karl', 'Zhu', [], '6969')
+users['car insect mean common'] = generate_user('Misha', 'Larionov', ['correct horse battery staple', 'my name is jeff'], '4321')
+users['my name is jeff'] = generate_user('Mark', 'Zhu', ['car insect mean common'], '6969')
 
 #for _ in range(20):
 #    users['%s %s %s %s' % (choice(words), choice(words), choice(words), choice(words))] = generate_user()
