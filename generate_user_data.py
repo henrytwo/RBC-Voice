@@ -112,7 +112,8 @@ def generate_user(FIRST_NAME, LAST_NAME, AUTHREC, last4):
                 'amount': randint(100000, 300000) / 100,
                 'due': randint(1, 10)
             }
-        ]
+        ],
+        'message_queue' : []
     }
 
 def generate_transaction():
