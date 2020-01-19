@@ -39,12 +39,12 @@ app.post('/transfer', (req, res) => {
 
         for (var z = 0 ; z < i.length; z++) {
 
-            z = i[z];
+            var k = i[z];
 
-            out += z.charAt(0).toUpperCase() + z.substr(1)
+            out += k.charAt(0).toUpperCase() + k.substr(1)
         };
 
-        return s.trim();
+        return out.trim();
     }
 
     var data = req.body;
