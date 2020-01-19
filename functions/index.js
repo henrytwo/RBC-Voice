@@ -27,9 +27,26 @@ var months = [
     'Oct',
     'Nov',
     'Dec'
-]
+];
+
+
 
 app.post('/transfer', (req, res) => {
+
+    function capitalize(s) {
+        var i = s.split(' ');
+        var out = '';
+
+        for (var z = 0 ; z < i.length; z++) {
+
+            z = i[z];
+
+            out += z.charAt(0).toUpperCase() + z.substr(1)
+        };
+
+        return s.trim();
+    }
+
     var data = req.body;
 
     console.log(data);
@@ -37,7 +54,7 @@ app.post('/transfer', (req, res) => {
     let db = admin.firestore();
     var deebee = db.collection('users');
 
-    var amount = data['amount'];
+    var amount = parseFloat(data['amount'].toString().replace('$', '').replace(',', ''));
     var recipient = data['recipient'].toLowerCase();
     var time = {
         'year': new Date().getFullYear(),
@@ -46,16 +63,18 @@ app.post('/transfer', (req, res) => {
     };
     var from = data['from'];
 
+    console.log('Adjusted amount: ', amount);
+
 
     //deebee.doc(from).get().then((peopleRef) => {
 
     // CHECK AUTHORIZED RECIPIENT!!!!
 
-    deebee.where('name', '==', recipient).get()
+    deebee.where('first_name', '==', capitalize(recipient.split(' ')[0].toLowerCase())).get()
       .then(recipient_snapshot => {
 
         if (recipient_snapshot.empty) {
-          res.send({'error': 'Recipient not found!'});
+          res.send({'status': 'Sorry, I couldn\'t find anyone named ' + capitalize(recipient) + '! '});
         }
 
         console.log('Recipient data', recipient_snapshot.docs[0].id)
@@ -65,7 +84,7 @@ app.post('/transfer', (req, res) => {
 
         deebee.doc(from).get().then(doc => {
             if (!doc.exists) {
-              res.send({'error': 'Access Denied'})
+              res.send({'status': 'Sorry, something went wrong. '})
             } else {
               console.log('Document data:', doc.data());
 
@@ -75,13 +94,13 @@ app.post('/transfer', (req, res) => {
 
               if (from_user['authorized_recipients'].indexOf(recipient_id) != -1) {
 
-                  console.log('From user amount:', from_user['accounts']['Chequing Account'], amount);
+                  console.log('From user amount:', from_user['accounts']['Chequing'], amount);
 
-                  if (from_user['accounts']['Chequing Account'] - amount > 0) {
+                  if (from_user['accounts']['Chequing'] - amount > 0) {
                       console.log('Transfer approved', from_user['transactions'], recipient_user['transactions']);
 
                       var transaction_from_data = {
-                            'name': '[MONEY TRANSFER] To '+ recipient,
+                            'name': '[MONEY TRANSFER] To '+ capitalize(recipient),
                             'location': 'CANADA',
                             'timestamp': time,
                             'amount': -amount,
@@ -89,45 +108,46 @@ app.post('/transfer', (req, res) => {
                         };
 
                       var transaction_to_data = {
-                            'name': '[MONEY TRANSFER] From '+ from_user['name'],
+                            'name': '[MONEY TRANSFER] From '+ capitalize(from_user['name']),
                             'location': 'CANADA',
                             'timestamp': time,
                             'amount': amount,
                             'category': 'BANKING'
                         };
 
-                      from_user['accounts']['Chequing Account'] -= amount;
+                      from_user['accounts']['Chequing'] -= amount;
                       from_user['transactions'].push(transaction_from_data);
 
-                      recipient_user['accounts']['Chequing Account'] += amount;
+                      recipient_user['accounts']['Chequing'] += amount;
                       recipient_user['transactions'].push(transaction_to_data);
 
 
                       deebee.doc(recipient_id).set(recipient_user).then(() => {
                           deebee.doc(from).set(from_user).then(() => {
-                              res.send({'status': 'Executed'})
+                              res.send({'status': 'Successfully transferred $' + amount.toString() + ' to ' + capitalize(recipient_user['name']) + '. Your new Chequing balance is $' + (from_user['accounts']['Chequing'] - amount).toString() + '. '})
                           });
                       });
 
                   } else {
-                     res.send({'error': 'Insufficient funds!'})
+                     res.send({'status': 'Sorry, I can\'t process the transfer to ' + capitalize(recipient_user['name']) + ' since you have insufficient funds. In order to transfer $' + amount.toString() + ', you will need an additional $' + (amount - from_user['accounts']['Chequing']).toString() + '. '})
                   }
 
 
               } else {
-                  res.send({'error': 'Recipient not preauthorized!'})
+                  res.send({'status': 'Sorry, I can\'t process the transfer to' + capitalize(recipient_user['name']) + ' since they aren\'t listed as an authorized recipient. Please go to the RBC dashboard to change this setting. '})
               }
             }
           })
           .catch(err => {
               console.log(err);
-              res.send({'error': 'An error occured'})
+              res.send({'status': 'Sorry, an unexpected error occurred. '})
           })
 
 
       })
       .catch(err => {
         console.log('Error getting documents', err);
+        res.send({'status': 'Sorry, an unexpected error occurred.'})
       });
 
     //});
@@ -144,12 +164,12 @@ app.post('/login', (req, res) => {
 
     deebee.doc(data['usercode'].toLowerCase()).get().then(doc => {
         if (!doc.exists) {
-          res.send({'error': 'Access Denied'})
+          res.send({'status': 'Access Denied'})
         } else {
           console.log('Document data:', doc.data());
 
           var out = doc.data();
-          out['error'] = '';
+          out['status'] = '';
 
           res.send(JSON.stringify(out))
 
@@ -157,7 +177,7 @@ app.post('/login', (req, res) => {
       })
       .catch(err => {
           console.log(err);
-          res.send({'error': 'Access Denied'})
+          res.send({'status': 'Access Denied'})
       });
 
 

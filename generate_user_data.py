@@ -65,7 +65,7 @@ def date_to_str(date):
         'year': date.year
     }
 
-def generate_user(FIRST_NAME, LAST_NAME, AUTHREC):
+def generate_user(FIRST_NAME, LAST_NAME, AUTHREC, last4):
     DOB = date_to_str(datetime.fromtimestamp(randint(0, 10000000000)))
     #FIRST_NAME = choice(names).capitalize()
     #LAST_NAME = choice(names).capitalize()
@@ -88,16 +88,31 @@ def generate_user(FIRST_NAME, LAST_NAME, AUTHREC):
         'transactions': [], #transactions,
         'accounts' : {
             'Savings' : round(randint(0, 100000) / 100, 2),
-            'Chequing Account' : round(randint(0, 100000) / 100, 2),
+            'Chequing' : round(randint(0, 100000) / 100, 2),
             'Visa' : round(randint(0, 100000) / 100, 2),
         },
         'card' : {
             'Visa': {
-                'number' : randint(1000000000000000, 10000000000000000),
+                'number' : str(randint(100000000000, 1000000000000)) + last4,
                 'expiry_date' : date_to_str(datetime.fromtimestamp(randint(0, 10000000000)))
             }
         },
-        'authorized_recipients' : AUTHREC
+        'authorized_recipients' : AUTHREC,
+        'pending_transactions' : [
+            {
+                'name': 'Utilities',
+                'amount': randint(10000, 20000) / 100,
+                'due': randint(1, 10)
+            }, {
+                'name': 'Cell Phone',
+                'amount': randint(4000, 10000) / 100,
+                'due': randint(1, 10)
+            }, {
+                'name': 'Rent',
+                'amount': randint(100000, 300000) / 100,
+                'due': randint(1, 10)
+            }
+        ]
     }
 
 def generate_transaction():
@@ -117,9 +132,9 @@ def generate_transaction():
 
 users = {}
 
-users['correct horse battery staple'] = generate_user('Henry', 'Tu', ['car insect mean common'])
-users['car insect mean common'] = generate_user('Misha', 'Larionov', ['correct horse battery staple', 'i want your ass'])
-users['i want your ass'] = generate_user('Karl', 'Zhu', [])
+users['correct horse battery staple'] = generate_user('Henry', 'Tu', ['car insect mean common'], '1234')
+users['car insect mean common'] = generate_user('Misha', 'Larionov', ['correct horse battery staple', 'i want your ass'], '4321')
+users['i want your ass'] = generate_user('Karl', 'Zhu', [], '6969')
 
 #for _ in range(20):
 #    users['%s %s %s %s' % (choice(words), choice(words), choice(words), choice(words))] = generate_user()
