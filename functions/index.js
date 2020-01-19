@@ -94,6 +94,80 @@ app.post('/transactionhistory', (req, res) => {
 });
 
 
+app.post('/payvisa', (req, res) => {
+
+    var data = req.body;
+
+    console.log(data);
+
+    let db = admin.firestore();
+    var deebee = db.collection('users');
+
+    var amount = parseFloat(data['amount'].toString().replace('$', '').replace(',', ''));
+    var usercode = data['usercode'].toLowerCase();
+
+    deebee.doc(usercode).get().then(doc => {
+        if (!doc.exists) {
+            res.send({'status': 'Access Denied'})
+        } else {
+            console.log('Document data:', doc.data());
+
+            var data = doc.data();
+
+            if (data['accounts']['Chequing'] - amount >= 0) {
+                // ok
+
+                data['accounts']['Chequing'] = (data['accounts']['Chequing'] - amount).toFixed(2);
+                data['accounts']['Visa'] = (data['accounts']['Visa'] + amount).toFixed(2);
+
+                res.send({'status': 'Payment successful. Your Visa has a balance of $' + data['accounts']['Visa'].toString() + ' and your Chequing account has a balance of $' + data['accounts']['Chequing'].toString() + '.'})
+
+            } else {
+                res.send({'status': 'Sorry, you don\'t have enough in your chequing account to make a payment of $' + amount.toString() + '. As a reminder, your current balance is $' + data['accounts']['Chequing'].toString() + '.'})
+            }
+
+        }
+    }).catch(err => {
+        console.log('Error getting documents', err);
+        res.send({'status': 'Sorry, an unexpected error occurred.'})
+      });
+});
+
+app.post('/validatename', (req, res) => {
+
+    function capitalize(s) {
+        var i = s.split(' ');
+        var out = '';
+
+        for (var z = 0 ; z < i.length; z++) {
+
+            var k = i[z];
+
+            out += k.charAt(0).toUpperCase() + k.substr(1) + ' '
+        };
+
+        return out.trim();
+    }
+
+    var data = req.body;
+
+    console.log(data);
+
+    let db = admin.firestore();
+    var deebee = db.collection('users');
+
+    var name = data['name'];
+
+    deebee.where('first_name', '==', capitalize(name.split(' ')[0].toLowerCase())).get()
+      .then(recipient_snapshot => {
+
+          if (recipient_snapshot.empty) {
+              res.send({'status': 'Sorry, I couldn\'t find anyone named ' + capitalize(name.split(' ')[0].toLowerCase()) + '. '});
+          } else {
+              res.send({'status': 'ok'});
+          }
+      });
+});
 app.post('/transfer', (req, res) => {
 
     function capitalize(s) {
@@ -180,11 +254,11 @@ app.post('/transfer', (req, res) => {
                         };
 
                       from_user['accounts']['Chequing'] -= amount;
-                      from_user['accounts']['Chequing'] = from_user['accounts']['Chequing'].toFixed(2);
+                      from_user['accounts']['Chequing'] = parseFloat(from_user['accounts']['Chequing']).toFixed(2);
                       from_user['transactions'].push(transaction_from_data);
 
                       recipient_user['accounts']['Chequing'] += amount;
-                      recipient_user['accounts']['Chequing'] = recipient_user['accounts']['Chequing'].toFixed(2);
+                      recipient_user['accounts']['Chequing'] = parseFloat(recipient_user['accounts']['Chequing']).toFixed(2);
                       recipient_user['transactions'].push(transaction_to_data);
 
                       recipient_user['message_queue'].push('On ' + months[new Date().getMonth()] + ' ' + new Date().getDate() + ', you received a money transfer of $' + amount + ' from ' + from_user['name'] + '.\n');
